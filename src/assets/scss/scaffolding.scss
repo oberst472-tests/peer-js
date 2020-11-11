@@ -1,0 +1,39 @@
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+body {
+    min-height: 100vh;
+    color: #4e545b;
+    font-size: 12px;
+    font-family: $family--default;
+    background-image: linear-gradient(180deg, #fafafc 0%, #e5e7f4 100%);
+}
+
+.wrapper {
+    display: flex;
+    width: 100%;
+    max-width: 904px;
+    padding: 0 15px;
+    box-sizing: border-box;
+    margin: 0 auto;
+}
+
+
+//Scrollbar basic change
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

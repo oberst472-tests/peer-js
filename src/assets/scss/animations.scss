@@ -1,0 +1,65 @@
+.layout-fade-enter-active, .layout-fade-leave-active {
+    transition: opacity .5s ease;
+}
+.layout-fade-enter, .layout-fade-leave-to {
+    opacity: 0;
+}
+
+.translateTop-enter-active, .translateTop-leave-active {
+    transition-duration: 0.5s;
+}
+.translateTop-enter, .translateTop-leave-to {
+    opacity: 0;
+    transform: translateY(-80px);
+}
+
+.fade-enter-active, .fade-leave-active {
+    transition: opacity 0.3s;
+}
+.fade-enter, .fade-leave-to {
+    opacity: 0;
+}
+
+.list-complete-enter, .list-complete-leave-to {
+    opacity: 0;
+    transform: translateY(-60px);
+}
+.list-complete-leave-active {
+    position: absolute;
+}
+
+.list-comp-enter, .list-comp-leave-to {
+    opacity: 0;
+    transform: translateY(-60px);
+}
+.list-comp-leave-active {
+    position: absolute;
+}
+
+.trx-enter-active, .trx-leave-active {
+    transform: translateX(0);
+    transition-duration: 0.5s;
+}
+.trx-enter, .trx-leave-to {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.trx2-enter-active, .trx2-leave-active {
+    margin-right: 0;
+    transition-duration: 0.5s;
+}
+.trx2-enter, .trx2-leave-to {
+    margin-right: -270px;
+    opacity: 0;
+}
+
+.try-enter-active, .try-leave-active {
+    transform: translateY(0);
+    transition-duration: 0.5s;
+}
+.try-enter, .try-leave-to {
+    transform: translateY(-30px);
+    opacity: 0;
+}
+
