@@ -1,5 +1,5 @@
 <template>
-    <div class="ui-circle-btn">
+    <div class="ui-circle-btn" @click="$emit('click')">
         <slot/>
     </div>
 </template>
