@@ -89,6 +89,13 @@ export default {
         getStringFromJson(payload) {
             return JSON.stringify(payload)
         },
+        sendMessage(eventName, data) {
+            const payload = {
+                event: eventName,
+                data
+            }
+            this.socket.send(this.getStringFromJson(payload))
+        },
 
         async messageProcessing(data) {
             const payload = this.getJsonFromString(data.data)
@@ -98,57 +105,41 @@ export default {
 
             const isOperatorAnsweredTheCall = eventName === 'operator_answered_the_call' //оператор ответил на звонок
             const isMessageEvent = eventName === 'message' // пришло сообщение от терминала
-            // const iceCandidate = eventName === 'ice_candidate' // пришел новый ice_candidate от оператора
 
 
             if (isOperatorAnsweredTheCall) {
                 this.clientChannel = info['client_channel']
-                console.info(`оператор ответил на звонок, id канала ${this.clientChannel}`)
+                console.info(`оператор ответил на звонок`)
 
                 //можно слать запрос на открытие соединения webRTC
                 await this.sendRequestToOpenWebRTC()
             }
 
+
+            ////////////
             if (isMessageEvent) {
-                console.log(55)
-                console.log(info)
-                // eslint-disable-next-line no-unused-vars
-                const {from: clientChannel, message_data: messageData} = info
-                this.clientChannel = clientChannel
-                // console.info(`пришло сообщение от оператора с id канала: ${clientChannel} на установку webRTC`)
+                this.clientChannel = info.from
+                const messageData = info.message_data
+                const data = messageData.data
 
                 const isIceCandidateEvent = messageData.event === 'ice-candidate'
                 const isAnswerEvent = messageData.event === 'answer' //получение answer с терминала
 
 
-                // console.info(`пришло сообщение от терминала с id каналом: ${this.clientChannel}`)
 
                 if (isIceCandidateEvent) {
-                    console.info(`пришел евент ice-candidate от терминала с id каналом: ${this.clientChannel}`)
-                    console.info(data)
+                    console.info(`пришел евент ICE-CANDIDATE от терминала`)
 
-                    this._handleNewICECandidateMsg()
+                    await this._handleNewICECandidateMsg(data.candidate)
                 }
 
                 if (isAnswerEvent) {
                     console.info(`пришел евент answer от терминала с id каналом: ${this.clientChannel}`)
-                    console.info(messageData.data.sdp)
-                    const desc = new RTCSessionDescription(messageData.data.sdp);
-                    try {
-                        console.log(desc)
-                    } catch (e) {
-                        console.log(e)
-                    }
+                    const desc = new RTCSessionDescription(data.sdp);
+                    await this.peer.setRemoteDescription(desc)
                 }
             }
 
-        },
-        sendMessage(eventName, data) {
-            const payload = {
-                event: eventName,
-                data
-            }
-            this.socket.send(this.getStringFromJson(payload))
         },
 
         async sendRequestToOpenWebRTC() {
@@ -162,36 +153,44 @@ export default {
             this.$refs.userVideo.srcObject = stream
             this.userStream = stream
 
-            console.log(this.userStream)
 
-            this._callUser()
+            await this._callUser()
         },
 
-        _callUser() {
-            this._createPeer();
-            console.log(this.userStream)
+        async _callUser() {
+            await this._createPeer();
             this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
         },
 
-        _createPeer() {
-            this.peer = new RTCPeerConnection(this.constraints);
-            console.log(this.peer)
+        async _createPeer() {
+            this.peer = await new RTCPeerConnection(this.constraints);
+
             this.peer.onicecandidate = e => {
+                console.log('отработал onicecandidate')
                 if (e.candidate) {
                     console.log('отправляем ice кандидата терминалу')
+
                     const payload = {
                         event: 'ice-candidate',
                         candidate: e.candidate,
                     }
-                    this.sendMessage('message_to', payload)
+
+                    const data = {
+                        to: this.clientChannel,
+                        message_data: {
+                            event: 'ice-candidate',
+                            data: payload
+                        }
+                    }
+
+                    this.sendMessage('message_to', data)
                 }
             }
 
             this.peer.ontrack = e => {
-                console.log(6668)
+                console.log('отработал ontrack')
                 if (e) {
                     console.log('загружаем видео в partner')
-                    console.log(e)
                     this.$refs.partnerVideo.srcObject = e.streams[0];
                 }
                 else {
@@ -199,15 +198,13 @@ export default {
                 }
             }
 
-            // this.peer.addEventListener('track', this._handleTrackEvent())
-            this.peer.addEventListener('negotiationneeded', this._createOffer())
+            this.peer.onnegotiationneeded = this._createOffer()
         },
 
 
-        _handleNewICECandidateMsg(incoming) {
+       async _handleNewICECandidateMsg(incoming) {
             console.log('отработал _handleNewICECandidateMsg')
-            console.log(incoming)
-            const candidate = new RTCIceCandidate(incoming);
+            const candidate = await new RTCIceCandidate(incoming);
 
             this.peer.addIceCandidate(candidate)
                 .catch(e => console.log(e));
@@ -232,7 +229,7 @@ export default {
         async _createOffer() { //создаем офера
             try {
                 console.log('создаем офер')
-                const offer = await this.peer.createOffer()
+                const offer = await this.peer.createOffer({offerToReceiveVideo: 1})
                 await this.peer.setLocalDescription(offer)
 
                 const payload = {
@@ -252,7 +249,6 @@ export default {
             } catch (e) {
                 console.log('оффер не создан и не отправлен')
                 console.log(e)
-
             }
 
         },
@@ -269,7 +265,6 @@ export default {
                     data: payload
                 }
             }
-            console.log(data)
             this.sendMessage('message_to', data)
         }
     },
