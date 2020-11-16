@@ -230,7 +230,7 @@ export default {
         async _createOffer() { //создаем офера
             try {
                 console.log('создаем офер')
-                const offer = await this.peer.createOffer({offerToReceiveVideo: 1})
+                const offer = await this.peer.createOffer(this.offerOptions)
                 await this.peer.setLocalDescription(offer)
 
                 const payload = {
