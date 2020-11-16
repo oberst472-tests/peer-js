@@ -31,13 +31,13 @@ export default {
             },
             constraints: {
                 iceServers: [
-                    {url: 'stun:stun1.l.google.com:19302'},
-                    {url: 'stun:stun2.l.google.com:19302'},
-                    {url: 'stun:stun3.l.google.com:19302'},
+                    { url: 'stun:stun1.l.google.com:19302' },
+                    { url: 'stun:stun2.l.google.com:19302' },
+                    { url: 'stun:stun3.l.google.com:19302' },
                     {
-                        urls: 'turn:numb.viagenie.ca',
-                        credential: 'muazkh',
-                        username: 'webrtc@live.com'
+                        url: 'turn:coturn.sverstal.ru:3478',
+                        username: 'tab1',
+                        credential: '123456',
                     },
                 ],
             },
@@ -169,6 +169,7 @@ export default {
 
         _callUser() {
             this._createPeer();
+            console.log(this.userStream)
             this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
         },
 
