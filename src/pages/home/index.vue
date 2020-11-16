@@ -11,14 +11,18 @@
 </template>
 
 <script>
+import Peer from 'peerjs'
 
 export default {
     data() {
         return {
+            peerID: '',
+            peer: '',
+            peerConnect: null,
+
             socket: null,
             isSocketOpen: false,
             testUserId: 'yfduey778',
-            peer: '',
             socketRef: '',
             otherUser: '',
             userStream: null,
@@ -90,7 +94,7 @@ export default {
             return JSON.stringify(payload)
         },
 
-        async messageProcessing(data) {
+        messageProcessing(data) {
             const payload = this.getJsonFromString(data.data)
 
             const info = payload.data
@@ -106,7 +110,7 @@ export default {
                 console.info(`оператор ответил на звонок, id канала ${this.clientChannel}`)
 
                 //можно слать запрос на открытие соединения webRTC
-                await this.sendRequestToOpenWebRTC()
+                 this.sendRequestToOpenWebRTC()
             }
 
             if (isMessageEvent) {
@@ -151,66 +155,20 @@ export default {
             this.socket.send(this.getStringFromJson(payload))
         },
 
-        async sendRequestToOpenWebRTC() {
-            await this._mediaStream()
-        },
+        sendRequestToOpenWebRTC() {
+            // eslint-disable-next-line no-undef
+            this.peer = new Peer()
+            console.log(5)
+            const conn = this.peer.connect();
+            conn.on('open', () => {
+                conn.send('hi!');
+            });
 
-        async _mediaStream() {
-            const stream = await navigator.mediaDevices.getUserMedia(this.options)
+            this.peer.on('open', peerID => {
+                console.log('создался peerID')
+                this.peerID = peerID
+            });
 
-            // выхвать try и catch если пользователь запретит доступ к камере
-            this.$refs.userVideo.srcObject = stream
-            this.userStream = stream
-
-            console.log(this.userStream)
-
-            this._callUser()
-        },
-
-        _callUser() {
-            this._createPeer();
-            console.log(this.userStream)
-            this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
-        },
-
-        _createPeer() {
-            this.peer = new RTCPeerConnection(this.constraints);
-            console.log(this.peer)
-            this.peer.onicecandidate = e => {
-                if (e.candidate) {
-                    console.log('отправляем ice кандидата терминалу')
-                    const payload = {
-                        event: 'ice-candidate',
-                        candidate: e.candidate,
-                    }
-                    this.sendMessage('message_to', payload)
-                }
-            }
-
-            this.peer.ontrack = e => {
-                console.log(6668)
-                if (e) {
-                    console.log('загружаем видео в partner')
-                    console.log(e)
-                    this.$refs.partnerVideo.srcObject = e.streams[0];
-                }
-                else {
-                    console.log('_handleTrackEvent не отработал, e пустой!!!')
-                }
-            }
-
-            // this.peer.addEventListener('track', this._handleTrackEvent())
-            this.peer.addEventListener('negotiationneeded', this._createOffer())
-        },
-
-
-        _handleNewICECandidateMsg(incoming) {
-            console.log('отработал _handleNewICECandidateMsg')
-            console.log(incoming)
-            const candidate = new RTCIceCandidate(incoming);
-
-            this.peer.addIceCandidate(candidate)
-                .catch(e => console.log(e));
         },
 
 
@@ -229,54 +187,24 @@ export default {
             }
         },
 
-        async _createOffer() { //создаем офера
-            try {
-                console.log('создаем офер')
-                const offer = await this.peer.createOffer()
-                await this.peer.setLocalDescription(offer)
-
-                const payload = {
-                    target: this.clientChannel,
-                    sdp: this.peer.localDescription
-                }
-                const data = {
-                    to: this.clientChannel,
-                    message_data: {
-                        event: 'offer',
-                        data: payload
-                    }
-                }
-                console.log('отправляем OFFER терминалу')
-                console.log(data)
-                this.sendMessage('message_to', data)
-            } catch (e) {
-                console.log('оффер не создан и не отправлен')
-                console.log(e)
-
-            }
-
-        },
 
         testCall() {
-            const payload = {
-                // caller: socketRef.current.id,
-                sdp: 'lol'
-            }
-            const data = {
-                to: this.clientChannel,
-                message_data: {
-                    event: 'offer',
-                    data: payload
-                }
-            }
-            console.log(data)
-            this.sendMessage('message_to', data)
+            console.log(1)
+            this.sendRequestToOpenWebRTC()
         }
     },
 
 
-    mounted() {
-        this.socketConnect()
+    created() {
+        // this.socketConnect()
+        this.peer = new Peer()
+        console.log(6)
+        console.log(this.peer)
+        this.peer.on('open', peerID => {
+            console.log(66)
+            console.log('создался peerID')
+            this.peerID = peerID
+        });
     },
     beforeDestroy() {
         this.socketDisconnect()
