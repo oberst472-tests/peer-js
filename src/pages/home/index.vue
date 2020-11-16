@@ -11,18 +11,14 @@
 </template>
 
 <script>
-import Peer from 'peerjs'
 
 export default {
     data() {
         return {
-            peerID: '',
-            peer: '',
-            peerConnect: null,
-
             socket: null,
             isSocketOpen: false,
             testUserId: 'yfduey778',
+            peer: '',
             socketRef: '',
             otherUser: '',
             userStream: null,
@@ -93,8 +89,15 @@ export default {
         getStringFromJson(payload) {
             return JSON.stringify(payload)
         },
+        sendMessage(eventName, data) {
+            const payload = {
+                event: eventName,
+                data
+            }
+            this.socket.send(this.getStringFromJson(payload))
+        },
 
-        messageProcessing(data) {
+        async messageProcessing(data) {
             const payload = this.getJsonFromString(data.data)
 
             const info = payload.data
@@ -107,68 +110,105 @@ export default {
 
             if (isOperatorAnsweredTheCall) {
                 this.clientChannel = info['client_channel']
-                console.info(`оператор ответил на звонок, id канала ${this.clientChannel}`)
+                console.info(`оператор ответил на звонок`)
 
                 //можно слать запрос на открытие соединения webRTC
-                 this.sendRequestToOpenWebRTC()
+                await this.sendRequestToOpenWebRTC()
             }
 
+
+            ////////////
             if (isMessageEvent) {
-                console.log(55)
-                console.log(info)
-                // eslint-disable-next-line no-unused-vars
-                const {from: clientChannel, message_data: messageData} = info
-                this.clientChannel = clientChannel
-                // console.info(`пришло сообщение от оператора с id канала: ${clientChannel} на установку webRTC`)
+                this.clientChannel = info.from
+                const messageData = info.message_data
+                const data = messageData.data
 
                 const isIceCandidateEvent = messageData.event === 'ice-candidate'
                 const isAnswerEvent = messageData.event === 'answer' //получение answer с терминала
 
 
-                // console.info(`пришло сообщение от терминала с id каналом: ${this.clientChannel}`)
 
                 if (isIceCandidateEvent) {
-                    console.info(`пришел евент ice-candidate от терминала с id каналом: ${this.clientChannel}`)
-                    console.info(data)
+                    console.info(`пришел евент ICE-CANDIDATE от терминала`)
 
-                    this._handleNewICECandidateMsg()
+                    await this._handleNewICECandidateMsg(data.candidate)
                 }
 
                 if (isAnswerEvent) {
                     console.info(`пришел евент answer от терминала с id каналом: ${this.clientChannel}`)
-                    console.info(messageData.data.sdp)
-                    const desc = new RTCSessionDescription(messageData.data.sdp);
-                    try {
-                        console.log(desc)
-                    } catch (e) {
-                        console.log(e)
-                    }
+                    const desc = new RTCSessionDescription(data.sdp);
+                    await this.peer.setRemoteDescription(desc)
                 }
             }
 
         },
-        sendMessage(eventName, data) {
-            const payload = {
-                event: eventName,
-                data
-            }
-            this.socket.send(this.getStringFromJson(payload))
+
+        async sendRequestToOpenWebRTC() {
+            await this._mediaStream()
         },
 
-        sendRequestToOpenWebRTC() {
-            // eslint-disable-next-line no-undef
-            this.peer = new Peer()
-            console.log(5)
-            const conn = this.peer.connect();
-            conn.on('open', () => {
-                conn.send('hi!');
-            });
+        async _mediaStream() {
+            const stream = await navigator.mediaDevices.getUserMedia(this.options)
 
-            this.peer.on('open', peerID => {
-                console.log('создался peerID')
-                this.peerID = peerID
-            });
+            // выхвать try и catch если пользователь запретит доступ к камере
+            this.$refs.userVideo.srcObject = stream
+            this.userStream = stream
 
+
+            await this._callUser()
+        },
+
+        async _callUser() {
+            await this._createPeer();
+            this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
+        },
+
+        async _createPeer() {
+            this.peer = await new RTCPeerConnection(this.constraints);
+
+            this.peer.onicecandidate = e => {
+                console.log('отработал onicecandidate')
+                if (e.candidate) {
+                    console.log('отправляем ice кандидата терминалу')
+
+                    const payload = {
+                        event: 'ice-candidate',
+                        candidate: e.candidate,
+                    }
+
+                    const data = {
+                        to: this.clientChannel,
+                        message_data: {
+                            event: 'ice-candidate',
+                            data: payload
+                        }
+                    }
+
+                    this.sendMessage('message_to', data)
+                }
+            }
+
+            this.peer.ontrack = e => {
+                console.log('отработал ontrack')
+                if (e) {
+                    console.log('загружаем видео в partner')
+                    this.$refs.partnerVideo.srcObject = e.streams[0];
+                }
+                else {
+                    console.log('_handleTrackEvent не отработал, e пустой!!!')
+                }
+            }
+
+            this.peer.onnegotiationneeded = this._createOffer()
+        },
+
+
+       async _handleNewICECandidateMsg(incoming) {
+            console.log('отработал _handleNewICECandidateMsg')
+            const candidate = await new RTCIceCandidate(incoming);
+
+            this.peer.addIceCandidate(candidate)
+                .catch(e => console.log(e));
         },
 
 
@@ -187,24 +227,52 @@ export default {
             }
         },
 
+        async _createOffer() { //создаем офера
+            try {
+                console.log('создаем офер')
+                const offer = await this.peer.createOffer({offerToReceiveVideo: 1})
+                await this.peer.setLocalDescription(offer)
+
+                const payload = {
+                    target: this.clientChannel,
+                    sdp: this.peer.localDescription
+                }
+                const data = {
+                    to: this.clientChannel,
+                    message_data: {
+                        event: 'offer',
+                        data: payload
+                    }
+                }
+                console.log('отправляем OFFER терминалу')
+                console.log(data)
+                this.sendMessage('message_to', data)
+            } catch (e) {
+                console.log('оффер не создан и не отправлен')
+                console.log(e)
+            }
+
+        },
 
         testCall() {
-            console.log(1)
-            this.sendRequestToOpenWebRTC()
+            const payload = {
+                // caller: socketRef.current.id,
+                sdp: 'lol'
+            }
+            const data = {
+                to: this.clientChannel,
+                message_data: {
+                    event: 'offer',
+                    data: payload
+                }
+            }
+            this.sendMessage('message_to', data)
         }
     },
 
 
-    created() {
-        // this.socketConnect()
-        this.peer = new Peer()
-        console.log(6)
-        console.log(this.peer)
-        this.peer.on('open', peerID => {
-            console.log(66)
-            console.log('создался peerID')
-            this.peerID = peerID
-        });
+    mounted() {
+        this.socketConnect()
     },
     beforeDestroy() {
         this.socketDisconnect()
