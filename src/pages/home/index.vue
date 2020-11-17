@@ -5,7 +5,6 @@
         <video id="remoteVideo" ref="partnerVideo" autoplay class="page-home__video page-home__video-partner" playsinline></video>
         <div>
             <UiCircleBtn class="page-home__btn" @click="callRequest">Позвонить</UiCircleBtn>
-            <UiBtn @click="testCall">Тестовая кнопка</UiBtn>
         </div>
     </div>
 </template>
@@ -17,7 +16,6 @@ export default {
         return {
             socket: null,
             isSocketOpen: false,
-            testUserId: 'yfduey778',
             peer: '',
             socketRef: '',
             otherUser: '',
@@ -26,8 +24,8 @@ export default {
             clientChannel: '',
             options: {audio: true, video: true},
             offerOptions: {
-                offerToReceiveAudio: 1,
-                offerToReceiveVideo: 1
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true
             },
             constraints: {
                 iceServers: [
@@ -129,15 +127,20 @@ export default {
 
 
                 if (isIceCandidateEvent) {
-                    console.info(`пришел евент ICE-CANDIDATE от терминала`)
-
-                    await this._handleNewICECandidateMsg(data.candidate)
+                    this._handleNewICECandidateMsg(data.candidate)
                 }
 
                 if (isAnswerEvent) {
                     console.info(`пришел евент answer от терминала с id каналом: ${this.clientChannel}`)
                     const desc = new RTCSessionDescription(data.sdp);
-                    await this.peer.setRemoteDescription(desc)
+                    try {
+                        console.log(desc)
+                        //передаем answer от оператора d webRTC
+                        await this.peer.setRemoteDescription(desc)
+                    } catch (e) {
+                        console.log('не отработал!')
+                        console.log(e)
+                    }
                 }
             }
 
@@ -161,15 +164,14 @@ export default {
         async _callUser() {
             await this._createPeer();
             this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
+            console.log(111)
         },
 
         async _createPeer() {
             this.peer = await new RTCPeerConnection(this.constraints);
 
             this.peer.onicecandidate = e => {
-                console.log('отработал onicecandidate')
                 if (e.candidate) {
-                    console.log('отправляем ice кандидата терминалу')
 
                     const payload = {
                         event: 'ice-candidate',
@@ -189,9 +191,9 @@ export default {
             }
 
             this.peer.ontrack = e => {
-                console.log('отработал ontrack')
+                console.log(222)
+                console.log(e)
                 if (e) {
-                    console.log('загружаем видео в partner')
                     this.$refs.partnerVideo.srcObject = e.streams[0];
                 }
                 else {
@@ -202,11 +204,9 @@ export default {
             this.peer.onnegotiationneeded = this._createOffer()
         },
 
-
-       async _handleNewICECandidateMsg(incoming) {
-            console.log('отработал _handleNewICECandidateMsg')
-            const candidate = await new RTCIceCandidate(incoming);
-
+        _handleNewICECandidateMsg(incoming) {
+            const candidate = new RTCIceCandidate(incoming);
+            //отдаем кандидата в webRTC
             this.peer.addIceCandidate(candidate)
                 .catch(e => console.log(e));
         },
@@ -229,7 +229,6 @@ export default {
 
         async _createOffer() { //создаем офера
             try {
-                console.log('создаем офер')
                 const offer = await this.peer.createOffer(this.offerOptions)
                 await this.peer.setLocalDescription(offer)
 
@@ -244,29 +243,12 @@ export default {
                         data: payload
                     }
                 }
-                console.log('отправляем OFFER терминалу')
-                console.log(data)
                 this.sendMessage('message_to', data)
             } catch (e) {
                 console.log('оффер не создан и не отправлен')
                 console.log(e)
             }
 
-        },
-
-        testCall() {
-            const payload = {
-                // caller: socketRef.current.id,
-                sdp: 'lol'
-            }
-            const data = {
-                to: this.clientChannel,
-                message_data: {
-                    event: 'offer',
-                    data: payload
-                }
-            }
-            this.sendMessage('message_to', data)
         }
     },
 
@@ -294,7 +276,7 @@ export default {
     padding: 30px;
     border-radius: 15px;
     background-color: #fff;
-    grid-auto-rows: 260px;
+    grid-template-rows: 210px 100px;
     grid-template-areas:
         'video-client video-partner'
         'btn btn';
