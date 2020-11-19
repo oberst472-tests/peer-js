@@ -3,8 +3,9 @@
         <video id="localVideo" ref="userVideo" autoplay class="page-home__video page-home__video-client" muted playsinline></video>
 
         <video id="remoteVideo" ref="partnerVideo" autoplay class="page-home__video page-home__video-partner" playsinline></video>
-        <div>
+        <div class="page-home__btn-box">
             <UiCircleBtn class="page-home__btn" @click="callRequest">Позвонить</UiCircleBtn>
+            <UiCircleBtn class="page-home__btn" @click="stopCall" theme="negative">Завершить вызов</UiCircleBtn>
         </div>
     </div>
 </template>
@@ -17,11 +18,12 @@ export default {
             socket: null,
             isSocketOpen: false,
             peer: '',
-            socketRef: '',
             otherUser: '',
             userStream: null,
 
             clientChannel: '',
+            callID: '',
+
             options: {audio: true, video: true},
             offerOptions: {
                 offerToReceiveAudio: true,
@@ -42,6 +44,11 @@ export default {
         }
     },
     methods: {
+        log(title = 'console group title', text = '', color = 'aqua') {
+            console.group(`%c ${title}`, `font-size: 13px; color: ${color}; border: 1px solid ${color}`);
+            console.info(text);
+            console.groupEnd();
+        },
         socketConnect() {
             const callCenterId = 'Q2FsbENlbnRlcjox'
             const type = 'device'
@@ -67,18 +74,17 @@ export default {
         },
         socketOpen() {
             this.isSocketOpen = true
-            console.info('сокет соединение открыто')
+            this.log('socketOpen', 'Cокет соединение открыто', 'lightgreen')
         },
         socketError() {
-            console.error('ошибка сокет соединения')
+            this.log('socketOpen', 'Ошибка сокет соединения', 'red')
             this.socketRetryConnect()
         },
         socketMessage(data) {
-            console.info('получены данные по сокет соединению')
             this.messageProcessing(data)
         },
         socketClose() {
-            console.info('сокет соединение закрыто')
+            this.log('socketClose', 'Сокет соединение закрыто')
             this.socketRetryConnect()
         },
         getJsonFromString(payload) {
@@ -103,19 +109,17 @@ export default {
 
             const isOperatorAnsweredTheCall = eventName === 'operator_answered_the_call' //оператор ответил на звонок
             const isMessageEvent = eventName === 'message' // пришло сообщение от терминала
-            // const iceCandidate = eventName === 'ice_candidate' // пришел новый ice_candidate от оператора
 
 
             if (isOperatorAnsweredTheCall) {
                 this.clientChannel = info['client_channel']
-                console.info(`оператор ответил на звонок`)
+                this.callID = info['call_id']
 
-                //можно слать запрос на открытие соединения webRTC
+                this.log('isOperatorAnsweredTheCall', 'Оператор ответил на звонок')
+
                 await this.sendRequestToOpenWebRTC()
             }
 
-
-            ////////////
             if (isMessageEvent) {
                 this.clientChannel = info.from
                 const messageData = info.message_data
@@ -124,22 +128,18 @@ export default {
                 const isIceCandidateEvent = messageData.event === 'ice-candidate'
                 const isAnswerEvent = messageData.event === 'answer' //получение answer с терминала
 
-
-
                 if (isIceCandidateEvent) {
                     this._handleNewICECandidateMsg(data.candidate)
                 }
 
                 if (isAnswerEvent) {
-                    console.info(`пришел евент answer от терминала с id каналом: ${this.clientChannel}`)
+                    this.log('isAnswerEvent', 'Пришел евент answer от терминала')
                     const desc = new RTCSessionDescription(data.sdp);
                     try {
-                        console.log(desc)
                         //передаем answer от оператора d webRTC
                         await this.peer.setRemoteDescription(desc)
                     } catch (e) {
-                        console.log('не отработал!')
-                        console.log(e)
+                        this.log('isAnswerEvent', e, 'red')
                     }
                 }
             }
@@ -164,7 +164,6 @@ export default {
         async _callUser() {
             await this._createPeer();
             this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
-            console.log(111)
         },
 
         async _createPeer() {
@@ -191,7 +190,6 @@ export default {
             }
 
             this.peer.ontrack = e => {
-                console.log(222)
                 console.log(e)
                 if (e) {
                     this.$refs.partnerVideo.srcObject = e.streams[0];
@@ -211,11 +209,6 @@ export default {
                 .catch(e => console.log(e));
         },
 
-
-
-
-
-
         callRequest() {
             if (this.isSocketOpen) {
                 const data = {
@@ -227,7 +220,14 @@ export default {
             }
         },
 
-        async _createOffer() { //создаем офера
+        stopCall() {
+            const data = {
+                call_id: this.callID
+            }
+            this.sendMessage('end_call', data)
+        },
+
+        async _createOffer() {
             try {
                 const offer = await this.peer.createOffer(this.offerOptions)
                 await this.peer.setLocalDescription(offer)
@@ -245,8 +245,7 @@ export default {
                 }
                 this.sendMessage('message_to', data)
             } catch (e) {
-                console.log('оффер не создан и не отправлен')
-                console.log(e)
+                this.log('_createOffer', e, 'red')
             }
 
         }
@@ -299,11 +298,19 @@ export default {
         }
     }
 
+    &__btn-box {
+        display: grid;
+        justify-content: center;
+        outline: 1px solid red;
+        grid-auto-flow: column;
+        grid-gap: 30px;
+        grid-area: btn;
+    }
+
     &__btn {
         width: 80px;
         height: 80px;
         justify-self: center;
-        grid-area: btn;
     }
 }
 </style>
