@@ -155,6 +155,7 @@ export default {
             await this._mediaStream()
         },
 
+
         async _mediaStream() {
             const stream = await navigator.mediaDevices.getUserMedia(this.options)
 
