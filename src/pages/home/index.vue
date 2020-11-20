@@ -31,7 +31,8 @@ export default {
             },
             constraints: {
                 iceServers: [
-                    { url: 'stun:vc-dev.enlighted.ru:3478' },
+                    { url: 'stun:stun.chathelp.ru:3478' },
+                    { url: 'stun:stun.comtube.ru:3478' },
                     {
                         url: 'turn:vc-dev.enlighted.ru:3478',
                         username: 'tab1',
