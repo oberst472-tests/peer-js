@@ -31,11 +31,11 @@ export default {
             },
             constraints: {
                 iceServers: [
-                    { url: 'stun:stun1.l.google.com:19302' },
-                    { url: 'stun:stun2.l.google.com:19302' },
-                    { url: 'stun:stun3.l.google.com:19302' },
+                    {url: 'stun:stun1.l.google.com:19302'},
+                    {url: 'stun:stun2.l.google.com:19302'},
+                    {url: 'stun:stun3.l.google.com:19302'},
                     {
-                        url: 'turn:coturn.sverstal.ru:3478',
+                        url: 'turn:vc-dev.enlighted.ru:3478',
                         username: 'tab1',
                         credential: '123456',
                     },
@@ -108,6 +108,7 @@ export default {
             const eventName = payload.event
 
             const isOperatorAnsweredTheCall = eventName === 'operator_answered_the_call' //оператор ответил на звонок
+            const isEndCallByEvent = eventName === 'end_call_by' //оператор завершил звонок
             const isMessageEvent = eventName === 'message' // пришло сообщение от терминала
 
 
@@ -118,6 +119,10 @@ export default {
                 this.log('isOperatorAnsweredTheCall', 'Оператор ответил на звонок')
 
                 await this.sendRequestToOpenWebRTC()
+            }
+
+            if (isEndCallByEvent) {
+                this.log('isEndCallByEvent', 'Оператор завершил звонок')
             }
 
             if (isMessageEvent) {
