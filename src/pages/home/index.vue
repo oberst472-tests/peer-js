@@ -30,10 +30,20 @@ export default {
                 offerToReceiveVideo: true
             },
             constraints: {
+                // iceServers: [
+                //     { urls: 'stun:vc-dev.enlighted.ru:3478' },
+                //     {
+                //         urls: 'turn:vc-dev.enlighted.ru:3478',
+                //         username: 'tab1',
+                //         credential: '123456',
+                //     },
+                // ],
                 iceServers: [
-                    { urls: 'stun:vc-dev.enlighted.ru:3478' },
+                    {url: 'stun:stun1.l.google.com:19302'},
+                    {url: 'stun:stun2.l.google.com:19302'},
+                    {url: 'stun:stun3.l.google.com:19302'},
                     {
-                        urls: 'turn:vc-dev.enlighted.ru:3478',
+                        url: 'turn:coturn.sverstal.ru:3478',
                         username: 'tab1',
                         credential: '123456',
                     },
