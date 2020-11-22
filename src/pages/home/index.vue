@@ -190,7 +190,7 @@ export default {
             this.peer = await new RTCPeerConnection(this.constraints);
             this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
 
-            await this._createOffer()
+            // await this._createOffer()
 
             this.peer.onicecandidate = e => {
                 this.log('onicecandidate1', 'ice кандидат пришел', 'yellow')
@@ -228,7 +228,7 @@ export default {
                 }
             }
 
-            // this.peer.onnegotiationneeded = this._createOffer()
+            this.peer.onnegotiationneeded = this._createOffer()
         },
 
         async _handleNewICECandidateMsg(incoming) {
