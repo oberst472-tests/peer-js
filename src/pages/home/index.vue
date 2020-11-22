@@ -211,9 +211,11 @@ export default {
                 console.log(e)
                 if (e) {
                     this.$refs.partnerVideo.srcObject = e.streams[0];
+                    this.log('ontrack', 'Монтирование видео партнера', 'lightgreen')
+                    console.log(e.streams[0])
                 }
                 else {
-                    console.log('_handleTrackEvent не отработал, e пустой!!!')
+                    this.log('ontrack', 'Видео партнера не смонтировано', 'lightgreen')
                 }
             }
 
