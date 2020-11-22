@@ -149,7 +149,7 @@ export default {
                 const isAnswerEvent = messageData.event === 'answer' //получение answer с терминала
 
                 if (isIceCandidateEvent) {
-                    // await this._handleNewICECandidateMsg(data.candidate)
+                    await this._handleNewICECandidateMsg(data.candidate)
                 }
 
                 if (isAnswerEvent) {
@@ -190,6 +190,8 @@ export default {
             this.peer = await new RTCPeerConnection(this.constraints);
             this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
 
+            await this._createOffer()
+
             this.peer.onicecandidate = e => {
                 this.log('onicecandidate1', 'ice кандидат пришел', 'yellow')
                 this.log('onicecandidate2', e, 'yellow')
@@ -226,7 +228,7 @@ export default {
                 }
             }
 
-            this.peer.onnegotiationneeded = this._createOffer()
+            // this.peer.onnegotiationneeded = this._createOffer()
         },
 
         async _handleNewICECandidateMsg(incoming) {
