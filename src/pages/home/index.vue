@@ -30,26 +30,31 @@ export default {
                 offerToReceiveVideo: true
             },
             constraints: {
-                // iceServers: [
-                //     { urls: 'stun:vc-dev.enlighted.ru:3478' },
-                //     {
-                //         urls: 'turn:vc-dev.enlighted.ru:3478',
-                //         username: 'tab1',
-                //         credential: '123456',
-                //     },
-                // ],
                 iceServers: [
                     {urls: 'stun:stun.l.google.com:19302'},
-                    {urls: 'stun:stun1.l.google.com:19302'},
-                    {urls: 'stun:stun2.l.google.com:19302'},
-                    {urls: 'stun:stun3.l.google.com:19302'},
-                    {urls: 'stun:stun4.l.google.com:19302'},
+                        {urls: 'stun:stun1.l.google.com:19302'},
+                        {urls: 'stun:stun2.l.google.com:19302'},
+                        {urls: 'stun:stun3.l.google.com:19302'},
+                        {urls: 'stun:stun4.l.google.com:19302'},
+                    { urls: 'stun:vc-dev.enlighted.ru:3478' },
                     {
-                        url: 'turn:coturn.sverstal.ru:3478',
+                        urls: 'turn:vc-dev.enlighted.ru:3478',
                         username: 'tab1',
                         credential: '123456',
                     },
                 ],
+                // iceServers: [
+                //     {urls: 'stun:stun.l.google.com:19302'},
+                //     {urls: 'stun:stun1.l.google.com:19302'},
+                //     {urls: 'stun:stun2.l.google.com:19302'},
+                //     {urls: 'stun:stun3.l.google.com:19302'},
+                //     {urls: 'stun:stun4.l.google.com:19302'},
+                //     {
+                //         url: 'turn:coturn.sverstal.ru:3478',
+                //         username: 'tab1',
+                //         credential: '123456',
+                //     },
+                // ],
             },
         }
     },
@@ -144,7 +149,7 @@ export default {
                 const isAnswerEvent = messageData.event === 'answer' //получение answer с терминала
 
                 if (isIceCandidateEvent) {
-                    this._handleNewICECandidateMsg(data.candidate)
+                    // await this._handleNewICECandidateMsg(data.candidate)
                 }
 
                 if (isAnswerEvent) {
@@ -213,6 +218,8 @@ export default {
                     this.$refs.partnerVideo.srcObject = e.streams[0];
                     this.log('ontrack', 'Монтирование видео партнера', 'lightgreen')
                     console.log(e.streams[0])
+                    console.log(666)
+                    console.log(this.$refs.partnerVideo.srcObject)
                 }
                 else {
                     this.log('ontrack', 'Видео партнера не смонтировано', 'lightgreen')
@@ -222,11 +229,17 @@ export default {
             this.peer.onnegotiationneeded = this._createOffer()
         },
 
-        _handleNewICECandidateMsg(incoming) {
+        async _handleNewICECandidateMsg(incoming) {
             const candidate = new RTCIceCandidate(incoming);
-            //отдаем кандидата в webRTC
-            this.peer.addIceCandidate(candidate)
-                .catch(e => console.log(e));
+            try {
+                await this.peer.addIceCandidate(candidate)
+            }
+            catch (e) {
+                this.log('Ошибка добавления кандидата', e, 'red')
+            }
+            // //отдаем кандидата в webRTC
+            // this.peer.addIceCandidate(candidate)
+            //     .catch(e => console.log(e));
         },
 
         callRequest() {
