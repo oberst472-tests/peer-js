@@ -31,9 +31,9 @@ export default {
             },
             constraints: {
                 iceServers: [
-                    { url: 'stun:vc-dev.enlighted.ru:3478' },
+                    { urls: 'stun:vc-dev.enlighted.ru:3478' },
                     {
-                        url: 'turn:vc-dev.enlighted.ru:3478',
+                        urls: 'turn:vc-dev.enlighted.ru:3478',
                         username: 'tab1',
                         credential: '123456',
                     },
@@ -167,11 +167,11 @@ export default {
 
         async _callUser() {
             await this._createPeer();
-            this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
         },
 
         async _createPeer() {
             this.peer = await new RTCPeerConnection(this.constraints);
+            this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
 
             this.peer.onicecandidate = e => {
                 if (e.candidate) {
