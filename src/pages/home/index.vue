@@ -186,6 +186,8 @@ export default {
             this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
 
             this.peer.onicecandidate = e => {
+                this.log('onicecandidate1', 'ice кандидат пришел', 'yellow')
+                this.log('onicecandidate2', e, 'yellow')
                 if (e.candidate) {
 
                     const payload = {
