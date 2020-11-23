@@ -32,10 +32,10 @@ export default {
             constraints: {
                 iceServers: [
                     {urls: 'stun:stun.l.google.com:19302'},
-                        {urls: 'stun:stun1.l.google.com:19302'},
-                        {urls: 'stun:stun2.l.google.com:19302'},
-                        {urls: 'stun:stun3.l.google.com:19302'},
-                        {urls: 'stun:stun4.l.google.com:19302'},
+                    {urls: 'stun:stun1.l.google.com:19302'},
+                    {urls: 'stun:stun2.l.google.com:19302'},
+                    {urls: 'stun:stun3.l.google.com:19302'},
+                    {urls: 'stun:stun4.l.google.com:19302'},
                     { urls: 'stun:vc-dev.enlighted.ru:3478' },
                     {
                         urls: 'turn:vc-dev.enlighted.ru:3478',
@@ -174,10 +174,9 @@ export default {
         async _mediaStream() {
             const stream = await navigator.mediaDevices.getUserMedia(this.options)
 
-            // выхвать try и catch если пользователь запретит доступ к камере
+            // обернуть в try и catch если пользователь запретит доступ к камере
             this.$refs.userVideo.srcObject = stream
             this.userStream = stream
-
 
             await this._callUser()
         },
@@ -189,8 +188,6 @@ export default {
         async _createPeer() {
             this.peer = await new RTCPeerConnection(this.constraints);
             this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
-
-            // await this._createOffer()
 
             this.peer.onicecandidate = e => {
                 this.log('onicecandidate1', 'ice кандидат пришел', 'yellow')
@@ -228,7 +225,7 @@ export default {
                 }
             }
 
-            this.peer.onnegotiationneeded = this._createOffer()
+            this.peer.onnegotiationneeded = this._createOffer(3)
         },
 
         async _handleNewICECandidateMsg(incoming) {
@@ -239,9 +236,6 @@ export default {
             catch (e) {
                 this.log('Ошибка добавления кандидата', e, 'red')
             }
-            // //отдаем кандидата в webRTC
-            // this.peer.addIceCandidate(candidate)
-            //     .catch(e => console.log(e));
         },
 
         callRequest() {
@@ -336,7 +330,6 @@ export default {
     &__btn-box {
         display: grid;
         justify-content: center;
-        outline: 1px solid red;
         grid-auto-flow: column;
         grid-gap: 30px;
         grid-area: btn;
