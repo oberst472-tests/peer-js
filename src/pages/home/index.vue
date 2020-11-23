@@ -5,7 +5,7 @@
         <video id="remoteVideo" ref="partnerVideo" autoplay class="page-home__video page-home__video-partner" playsinline></video>
         <div class="page-home__btn-box">
             <UiCircleBtn class="page-home__btn" @click="callRequest">Позвонить</UiCircleBtn>
-            <UiCircleBtn class="page-home__btn" @click="stopCall" theme="negative">Завершить вызов</UiCircleBtn>
+            <UiCircleBtn class="page-home__btn" theme="negative" @click="stopCall">Завершить вызов</UiCircleBtn>
         </div>
     </div>
 </template>
@@ -30,19 +30,17 @@ export default {
                 offerToReceiveVideo: true
             },
             constraints: {
-                iceServers: [
-                    {url: 'stun:stun.l.google.com:19302'},
-                    {url: 'stun:stun1.l.google.com:19302'},
-                    {url: 'stun:stun2.l.google.com:19302'},
-                    {url: 'stun:stun3.l.google.com:19302'},
-                    {url: 'stun:stun4.l.google.com:19302'},
-                    { url: 'stun:vc-dev.enlighted.ru:3478' },
+                iceServers: [{
+                    urls: 'stun:stun.l.google.com:19302'
+                },
+                    // public turn server from https://gist.github.com/sagivo/3a4b2f2c7ac6e1b5267c2f1f59ac6c6b
+                    // set your own servers here
                     {
-                        url: 'turn:vc-dev.enlighted.ru:3478',
-                        username: 'tab1',
-                        credential: '123456',
-                    },
-                ],
+                        url: 'turn:192.158.29.39:3478?transport=udp',
+                        credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+                        username: '28224511:1379330808'
+                    }
+                ]
                 // iceServers: [
                 //     {urls: 'stun:stun.l.google.com:19302'},
                 //     {urls: 'stun:stun1.l.google.com:19302'},
@@ -60,9 +58,9 @@ export default {
     },
     methods: {
         log(title = 'console group title', text = '', color = 'aqua') {
-            console.group(`%c ${title}`, `font-size: 13px; color: ${color}; border: 1px solid ${color}`);
-            console.info(text);
-            console.groupEnd();
+            console.group(`%c ${title}`, `font-size: 13px; color: ${color}; border: 1px solid ${color}`)
+            console.info(text)
+            console.groupEnd()
         },
         socketConnect() {
             const callCenterId = 'Q2FsbENlbnRlcjox'
@@ -154,7 +152,7 @@ export default {
 
                 if (isAnswerEvent) {
                     this.log('isAnswerEvent', 'Пришел евент answer от терминала')
-                    const desc = new RTCSessionDescription(data.sdp);
+                    const desc = new RTCSessionDescription(data.sdp)
                     try {
                         //передаем answer от оператора d webRTC
                         await this.peer.setRemoteDescription(desc)
@@ -182,12 +180,12 @@ export default {
         },
 
         async _callUser() {
-            await this._createPeer();
+            await this._createPeer()
         },
 
         async _createPeer() {
-            this.peer = await new RTCPeerConnection(this.constraints);
-            this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream));
+            this.peer = await new RTCPeerConnection(this.constraints)
+            this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream))
 
             this.peer.onicecandidate = e => {
                 this.log('onicecandidate1', 'ice кандидат пришел', 'yellow')
@@ -214,13 +212,12 @@ export default {
             this.peer.ontrack = e => {
                 console.log(e)
                 if (e) {
-                    this.$refs.partnerVideo.srcObject = e.streams[0];
+                    this.$refs.partnerVideo.srcObject = e.streams[0]
                     this.log('ontrack', 'Монтирование видео партнера', 'lightgreen')
                     console.log(e.streams[0])
                     console.log(666)
                     console.log(this.$refs.partnerVideo.srcObject)
-                }
-                else {
+                } else {
                     this.log('ontrack', 'Видео партнера не смонтировано', 'lightgreen')
                 }
             }
@@ -229,11 +226,10 @@ export default {
         },
 
         async _handleNewICECandidateMsg(incoming) {
-            const candidate = new RTCIceCandidate(incoming);
+            const candidate = new RTCIceCandidate(incoming)
             try {
                 await this.peer.addIceCandidate(candidate)
-            }
-            catch (e) {
+            } catch (e) {
                 this.log('Ошибка добавления кандидата', e, 'red')
             }
         },
@@ -329,9 +325,9 @@ export default {
 
     &__btn-box {
         display: grid;
+        grid-gap: 30px;
         justify-content: center;
         grid-auto-flow: column;
-        grid-gap: 30px;
         grid-area: btn;
     }
 
