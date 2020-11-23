@@ -40,7 +40,7 @@ export default {
                     {
                         urls: 'turn:vc-dev.enlighted.ru:3478',
                         username: 'tab1',
-                        credential: '123456',
+                        credentials: '123456',
                     },
                 ],
                 // iceServers: [
