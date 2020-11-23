@@ -31,16 +31,16 @@ export default {
             },
             constraints: {
                 iceServers: [
-                    {urls: 'stun:stun.l.google.com:19302'},
-                    {urls: 'stun:stun1.l.google.com:19302'},
-                    {urls: 'stun:stun2.l.google.com:19302'},
-                    {urls: 'stun:stun3.l.google.com:19302'},
-                    {urls: 'stun:stun4.l.google.com:19302'},
-                    { urls: 'stun:vc-dev.enlighted.ru:3478' },
+                    {url: 'stun:stun.l.google.com:19302'},
+                    {url: 'stun:stun1.l.google.com:19302'},
+                    {url: 'stun:stun2.l.google.com:19302'},
+                    {url: 'stun:stun3.l.google.com:19302'},
+                    {url: 'stun:stun4.l.google.com:19302'},
+                    { url: 'stun:vc-dev.enlighted.ru:3478' },
                     {
-                        urls: 'turn:vc-dev.enlighted.ru:3478',
+                        url: 'turn:vc-dev.enlighted.ru:3478',
                         username: 'tab1',
-                        credentials: '123456',
+                        credential: '123456',
                     },
                 ],
                 // iceServers: [
