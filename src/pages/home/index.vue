@@ -31,11 +31,17 @@ export default {
             },
             constraints: {
                 iceServers: [
-                    { url: 'stun:stun1.l.google.com:19302' },
-                    { url: 'stun:stun2.l.google.com:19302' },
-                    { url: 'stun:stun3.l.google.com:19302' },
+                    // { url: 'stun:stun1.l.google.com:19302' },
+                    // { url: 'stun:stun2.l.google.com:19302' },
+                    // { url: 'stun:stun3.l.google.com:19302' },
+                    // {
+                    //     url: 'turn:coturn.sverstal.ru:3478',
+                    //     username: 'tab1',
+                    //     credential: '123456',
+                    // },
+                    { urls: 'stun:vc-dev.enlighted.ru:3478' },
                     {
-                        url: 'turn:coturn.sverstal.ru:3478',
+                        urls: 'turn:vc-dev.enlighted.ru:3478',
                         username: 'tab1',
                         credential: '123456',
                     },
@@ -152,21 +158,22 @@ export default {
         },
 
         async sendRequestToOpenWebRTC() {
-            await this._mediaStream()
-        },
-
-
-        async _mediaStream() {
-            const stream = await navigator.mediaDevices.getUserMedia(this.options)
-
-            // обернуть в try и catch если пользователь запретит доступ к камере
-            this.$refs.userVideo.srcObject = stream
-            this.userStream = stream
-
             await this._callUser()
         },
 
+
+        // async _mediaStream() {
+        //     this.userStream = await navigator.mediaDevices.getUserMedia(this.options)
+        //
+        //     // обернуть в try и catch если пользователь запретит доступ к камере
+        //     // this.$refs.userVideo.srcObject = stream
+        //     // this.userStream = stream
+        //
+        //     // await this._callUser()
+        // },
+
         async _callUser() {
+            this.$refs.userVideo.srcObject = this.userStream
             await this._createPeer()
         },
 
@@ -264,8 +271,9 @@ export default {
     },
 
 
-    mounted() {
+    async mounted() {
         this.socketConnect()
+        this.userStream = await navigator.mediaDevices.getUserMedia(this.options)
     },
     beforeDestroy() {
         this.socketDisconnect()
