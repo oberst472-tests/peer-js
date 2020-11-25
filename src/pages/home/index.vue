@@ -1,24 +1,47 @@
 <template>
-    <div class="page-home">
-        <video id="localVideo" ref="userVideo" autoplay class="page-home__video page-home__video-client" muted playsinline></video>
+    <div class="page-terminal">
+        <component :is="`div`" :key="componentKey" class="wrap">
+            <video id="localVideo" ref="usVid" autoplay class="page-terminal__video page-terminal__video-client" muted playsinline></video>
 
-        <video id="remoteVideo" ref="partnerVideo" autoplay class="page-home__video page-home__video-partner" playsinline></video>
-        <div class="page-home__btn-box">
-            <UiCircleBtn class="page-home__btn" @click="callRequest">Позвонить</UiCircleBtn>
-            <UiCircleBtn class="page-home__btn" theme="negative" @click="stopCall">Завершить вызов</UiCircleBtn>
-        </div>
+            <video id="remoteVideo" ref="ptVid" autoplay class="page-terminal__video page-terminal__video-partner" playsinline></video>
+            <div class="page-terminal__btn-box">
+                <transition name="fadeB" mode="out-in">
+                    <UiBtn
+                        class="page-terminal__btn"
+                        @click="callRequest"
+                        v-if="!isCallBtnDisabled"
+                        key="btn-1"
+                    >
+                        Позвонить
+                    </UiBtn>
+                    <UiBtn
+                        v-else
+                        class="page-terminal__btn"
+                        theme="negative"
+                        @click="stopCall"
+                        key="btn-2"
+                    >
+                        Завершить вызов
+                    </UiBtn>
+                </transition>
+            </div>
+        </component>
     </div>
 </template>
 
 <script>
 
+import {customLog} from '@/utils/console-group'
+
 export default {
     data() {
         return {
+            componentKey: 1,
+            isCallBtnDisabled: false,
+            disableRetryConnection: false,
             socket: null,
             isSocketOpen: false,
-            peer: '',
-            otherUser: '',
+            peer: null,
             userStream: null,
 
             clientChannel: '',
@@ -31,15 +54,7 @@ export default {
             },
             constraints: {
                 iceServers: [
-                    // { url: 'stun:stun1.l.google.com:19302' },
-                    // { url: 'stun:stun2.l.google.com:19302' },
-                    // { url: 'stun:stun3.l.google.com:19302' },
-                    // {
-                    //     url: 'turn:coturn.sverstal.ru:3478',
-                    //     username: 'tab1',
-                    //     credential: '123456',
-                    // },
-                    { urls: 'stun:vc-dev.enlighted.ru:3478' },
+                    {urls: 'stun:vc-dev.enlighted.ru:3478'},
                     {
                         urls: 'turn:vc-dev.enlighted.ru:3478',
                         username: 'tab1',
@@ -50,11 +65,6 @@ export default {
         }
     },
     methods: {
-        log(title = 'console group title', text = '', color = 'aqua') {
-            console.group(`%c ${title}`, `font-size: 13px; color: ${color}; border: 1px solid ${color}`)
-            console.info(text)
-            console.groupEnd()
-        },
         socketConnect() {
             const callCenterId = 'Q2FsbENlbnRlcjox'
             const type = 'device'
@@ -76,21 +86,24 @@ export default {
             if (this.socket || this.isSocketOpen) {
                 this.socket.close(1000)
                 this.isSocketOpen = false
+                this.disableRetryConnection = true
             }
         },
         socketOpen() {
-            this.isSocketOpen = true
-            this.log('socketOpen', 'Cокет соединение открыто', 'lightgreen')
+            if (!this.disableRetryConnection) {
+                this.isSocketOpen = true
+                customLog('socketOpen', 'Cокет соединение для Т открыто', 'lightgreen')
+            }
         },
         socketError() {
-            this.log('socketOpen', 'Ошибка сокет соединения', 'red')
+            customLog('socketOpen', 'Ошибка сокет соединения Т', 'red')
             this.socketRetryConnect()
         },
         socketMessage(data) {
             this.messageProcessing(data)
         },
         socketClose() {
-            this.log('socketClose', 'Сокет соединение закрыто')
+            customLog('socketClose', 'Сокет соединение закрыто Т')
             this.socketRetryConnect()
         },
         getJsonFromString(payload) {
@@ -122,13 +135,14 @@ export default {
                 this.clientChannel = info['client_channel']
                 this.callID = info['call_id']
 
-                this.log('isOperatorAnsweredTheCall', 'Оператор ответил на звонок')
+                customLog('isOperatorAnsweredTheCall', 'Оператор ответил на звонок Т')
 
                 await this.sendRequestToOpenWebRTC()
             }
 
             if (isEndCallByEvent) {
-                this.log('isEndCallByEvent', 'Оператор завершил звонок')
+                customLog('isEndCallByEvent', 'Оператор завершил звонок Т')
+                this.reset()
             }
 
             if (isMessageEvent) {
@@ -144,13 +158,13 @@ export default {
                 }
 
                 if (isAnswerEvent) {
-                    this.log('isAnswerEvent', 'Пришел евент answer от терминала')
+                    customLog('isAnswerEvent', 'Пришел евент answer от терминала Т')
                     const desc = new RTCSessionDescription(data.sdp)
                     try {
                         //передаем answer от оператора d webRTC
                         await this.peer.setRemoteDescription(desc)
                     } catch (e) {
-                        this.log('isAnswerEvent', e, 'red')
+                        customLog('isAnswerEvent', e, 'red')
                     }
                 }
             }
@@ -161,19 +175,8 @@ export default {
             await this._callUser()
         },
 
-
-        // async _mediaStream() {
-        //     this.userStream = await navigator.mediaDevices.getUserMedia(this.options)
-        //
-        //     // обернуть в try и catch если пользователь запретит доступ к камере
-        //     // this.$refs.userVideo.srcObject = stream
-        //     // this.userStream = stream
-        //
-        //     // await this._callUser()
-        // },
-
         async _callUser() {
-            this.$refs.userVideo.srcObject = this.userStream
+            this.$refs.usVid.srcObject = this.userStream
             await this._createPeer()
         },
 
@@ -182,8 +185,8 @@ export default {
             this.userStream.getTracks().forEach(track => this.peer.addTrack(track, this.userStream))
 
             this.peer.onicecandidate = e => {
-                this.log('onicecandidate1', 'ice кандидат пришел', 'yellow')
-                this.log('onicecandidate2', e, 'yellow')
+                customLog('onicecandidate1', 'ice кандидат пришел', 'yellow Т')
+                customLog('onicecandidate2', e, 'yellow')
                 if (e.candidate) {
 
                     const payload = {
@@ -206,14 +209,32 @@ export default {
             this.peer.ontrack = e => {
                 console.log(e)
                 if (e) {
-                    this.$refs.partnerVideo.srcObject = e.streams[0]
-                    this.log('ontrack', 'Монтирование видео партнера', 'lightgreen')
+                    this.$refs.ptVid.srcObject = e.streams[0]
+                    customLog('ontrack', 'Монтирование видео партнера Т', 'lightgreen')
+                    console.log(this.$refs.ptVid.srcObject)
                 } else {
-                    this.log('ontrack', 'Видео партнера не смонтировано', 'lightgreen')
+                    customLog('ontrack', 'Видео партнера не смонтировано Т', 'lightgreen')
                 }
             }
 
-            this.peer.onnegotiationneeded = this._createOffer(3)
+            this.peer.addEventListener('connectionstatechange', () => {
+                switch (this.peer.connectionState) {
+                    case 'connected':
+                        customLog('connectionstatechange', this.peer.connectionState, 'rebeccapurple')
+                        break;
+                    case 'disconnected':
+                    case 'failed':
+                        customLog('connectionstatechange', this.peer.connectionState, 'rebeccapurple')
+                        this.reset()
+                        break;
+                    case 'closed':
+                        customLog('connectionstatechange', this.peer.connectionState, 'rebeccapurple')
+                        break;
+                }
+            })
+
+
+            this.peer.onnegotiationneeded = this._createOffer()
         },
 
         async _handleNewICECandidateMsg(incoming) {
@@ -221,7 +242,7 @@ export default {
             try {
                 await this.peer.addIceCandidate(candidate)
             } catch (e) {
-                this.log('Ошибка добавления кандидата', e, 'red')
+                customLog('Ошибка добавления кандидата Т', e, 'red')
             }
         },
 
@@ -230,6 +251,7 @@ export default {
                 const data = {
                     event: 'call_request'
                 }
+                this.isCallBtnDisabled = true
                 this.sendMessage('call_request', data)
             } else {
                 alert('Произошел системный сбой, перезагрузите страницу!')
@@ -241,6 +263,7 @@ export default {
                 call_id: this.callID
             }
             this.sendMessage('end_call', data)
+            this.reset()
         },
 
         async _createOffer() {
@@ -261,9 +284,28 @@ export default {
                 }
                 this.sendMessage('message_to', data)
             } catch (e) {
-                this.log('_createOffer', e, 'red')
+                customLog('_createOffer', e, 'red')
             }
 
+        },
+        reset() {
+            this.peer.close()
+            this.peer.onicecandidate = null
+            this.peer.ontrack = null
+            // this.userStream.stop()
+            this.isCallBtnDisabled = false
+            this.peer = null
+            this.$refs.usVid.srcObject = null
+            this.$refs.ptVid.srcObject = null
+
+            // this.userStream = null
+
+            this.clientChannel = ''
+            this.callID = ''
+            this.componentKey++
+            // setTimeout(() => {
+            //     this.userStream = navigator.mediaDevices.getUserMedia(this.options)
+            //   }, 500);
         }
     },
 
@@ -279,32 +321,45 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page-home {
+.fadeB-enter-active, .fadeB-leave-active {
+    transition: opacity 0.3s;
+}
+.fadeB-enter, .fadeB-leave-to {
+    opacity: 0;
+}
+.page-terminal {
     box-sizing: border-box;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-gap: 30px;
-    justify-content: center;
-    align-items: center;
     width: 100%;
-    max-width: 800px;
-    margin: 30px auto;
+    height: 100vh;
     padding: 30px;
-    border-radius: 15px;
-    background-color: #fff;
-    grid-template-rows: 210px 100px;
-    grid-template-areas:
+    background-color: #000;
+    display: flex;
+    align-items: center;
+
+    .wrap {
+        padding: 30px;
+        margin: 0 auto;
+        width: 100%;
+        max-width: 800px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-gap: 30px;
+        justify-content: center;
+        align-items: center;
+        grid-template-rows: 210px 100px;
+        grid-template-areas:
         'video-client video-partner'
         'btn btn';
-
+    }
 
     &__video {
         display: flex;
         width: 100%;
         height: 100%;
         border-radius: 15px;
-        background-color: #e3dbdb;
         overflow: hidden;
+        object-fit: cover;
+        background: repeating-linear-gradient(-45deg, rgba(#e3dbdb, 0.3), rgba(#e3dbdb, 0.3) 25px, rgba(#e3dbdb, 0) 25px, rgba(#e3dbdb, 0) 50px) fixed;
 
         &-client {
             grid-area: video-client;
@@ -316,17 +371,12 @@ export default {
     }
 
     &__btn-box {
-        display: grid;
-        grid-gap: 30px;
+        display: flex;
         justify-content: center;
-        grid-auto-flow: column;
         grid-area: btn;
     }
 
     &__btn {
-        width: 80px;
-        height: 80px;
-        justify-self: center;
     }
 }
 </style>
