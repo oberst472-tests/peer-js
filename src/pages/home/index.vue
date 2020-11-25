@@ -92,18 +92,18 @@ export default {
         socketOpen() {
             if (!this.disableRetryConnection) {
                 this.isSocketOpen = true
-                customLog('socketOpen', 'Cокет соединение для Т открыто', 'lightgreen')
+                customLog('socketOpen', 'Cокет соединение для открыто', 'lightgreen')
             }
         },
         socketError() {
-            customLog('socketOpen', 'Ошибка сокет соединения Т', 'red')
+            customLog('socketOpen', 'Ошибка сокет соединения ', 'red')
             this.socketRetryConnect()
         },
         socketMessage(data) {
             this.messageProcessing(data)
         },
         socketClose() {
-            customLog('socketClose', 'Сокет соединение закрыто Т')
+            customLog('socketClose', 'Сокет соединение закрыто ')
             this.socketRetryConnect()
         },
         getJsonFromString(payload) {
@@ -210,10 +210,10 @@ export default {
                 console.log(e)
                 if (e) {
                     this.$refs.ptVid.srcObject = e.streams[0]
-                    customLog('ontrack', 'Монтирование видео партнера Т', 'lightgreen')
+                    customLog('ontrack', 'Монтирование видео партнера', 'lightgreen')
                     console.log(this.$refs.ptVid.srcObject)
                 } else {
-                    customLog('ontrack', 'Видео партнера не смонтировано Т', 'lightgreen')
+                    customLog('ontrack', 'Видео партнера не смонтировано', 'lightgreen')
                 }
             }
 
@@ -242,7 +242,7 @@ export default {
             try {
                 await this.peer.addIceCandidate(candidate)
             } catch (e) {
-                customLog('Ошибка добавления кандидата Т', e, 'red')
+                customLog('Ошибка добавления кандидата', e, 'red')
             }
         },
 
