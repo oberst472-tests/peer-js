@@ -9,7 +9,7 @@
                     <UiBtn
                         class="page-terminal__btn"
                         @click="callRequest"
-                        v-if="false"
+                        v-if="!isCallBtnDisabled"
                         key="btn-1"
                     >
                         Позвонить
@@ -26,8 +26,6 @@
                 </transition>
             </div>
         </component>
-        <div class="page-terminal__popup" @click="callRequest" v-if="isPopupActive">
-        </div>
     </div>
 </template>
 
@@ -38,7 +36,6 @@ import {customLog} from '@/utils/console-group'
 export default {
     data() {
         return {
-            isPopupActive: true,
             componentKey: 1,
             isCallBtnDisabled: false,
             disableRetryConnection: false,
@@ -250,7 +247,6 @@ export default {
         },
 
         callRequest() {
-            this.isPopupActive = false
             if (this.isSocketOpen) {
                 const data = {
                     event: 'call_request'
@@ -263,7 +259,6 @@ export default {
         },
 
         stopCall() {
-            this.isPopupActive = true
             const data = {
                 call_id: this.callID
             }
@@ -337,7 +332,7 @@ export default {
     width: 100%;
     height: 100vh;
     padding: 30px;
-    background-color: #fff;
+    background-color: #000;
     display: flex;
     align-items: center;
 
@@ -364,25 +359,14 @@ export default {
         border-radius: 15px;
         overflow: hidden;
         object-fit: cover;
-        position: fixed;
         background: repeating-linear-gradient(-45deg, rgba(#e3dbdb, 0.3), rgba(#e3dbdb, 0.3) 25px, rgba(#e3dbdb, 0) 25px, rgba(#e3dbdb, 0) 50px) fixed;
 
         &-client {
             grid-area: video-client;
-            left: 60px;
-            bottom: 60px;
-            width: 210px;
-            height: 140px;
-            z-index: 3;
         }
 
         &-partner {
             grid-area: video-partner;
-            left: 0;
-            top: 0;
-            width: 100vw;
-            height: 100vh;
-            background-image: none;
         }
     }
 
@@ -390,30 +374,10 @@ export default {
         display: flex;
         justify-content: center;
         grid-area: btn;
-        position: fixed;
-        left: 300px;
-        bottom: 60px;
     }
 
     &__btn {
     }
-
-    &__popup {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 100;
-        background-color: #fff;
-        background-image: url('/bg.jpg');
-        background-repeat: no-repeat;
-        background-size: contain;
-        background-position: 0 0;
-        .header {
-            height: 67px;
-            background-color: #0B677B;
-        }
-    }
 }
 </style>
+
