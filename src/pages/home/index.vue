@@ -135,7 +135,7 @@ export default {
 
 
             if (isOperatorAnsweredTheCall) {
-                this.clientChannel = info['client_channel']
+                this.clientChannel = info['operator_channel']
                 this.callID = info['call_id']
 
                 customLog('isOperatorAnsweredTheCall', 'Оператор ответил на звонок Т')
