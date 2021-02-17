@@ -107,7 +107,7 @@ export default {
         },
         socketClose() {
             customLog('socketClose', 'Сокет соединение закрыто ')
-            this.socketRetryConnect()
+            // this.socketRetryConnect()
         },
         getJsonFromString(payload) {
             return JSON.parse(payload)
@@ -128,6 +128,9 @@ export default {
 
             const info = payload.data
             const eventName = payload.event
+
+            console.log(info)
+            console.log(payload.event)
 
             const isOperatorAnsweredTheCall = eventName === 'operator_answered_the_call' //оператор ответил на звонок
             const isEndCallByEvent = eventName === 'end_call_by' //оператор завершил звонок
@@ -164,7 +167,7 @@ export default {
                     customLog('isAnswerEvent', 'Пришел евент answer от терминала Т')
                     const desc = new RTCSessionDescription(data.sdp)
                     try {
-                        //передаем answer от оператора d webRTC
+                        //передаем answer от оператора в webRTC
                         await this.peer.setRemoteDescription(desc)
                     } catch (e) {
                         customLog('isAnswerEvent', e, 'red')
