@@ -129,8 +129,6 @@ export default {
             const info = payload.data
             const eventName = payload.event
 
-            console.log(info)
-            console.log(payload.event)
 
             const isOperatorAnsweredTheCall = eventName === 'operator_answered_the_call' //оператор ответил на звонок
             const isEndCallByEvent = eventName === 'end_call_by' //оператор завершил звонок
