@@ -23,7 +23,7 @@ export default {
     },
     methods: {
         async login() {
-            const url = `/auth/login/`
+            const url = `https://vc-dev.enlighted.ru/api/v1/auth/login/`
             let response = await fetch(url, {
                 method: 'POST',
                 headers: {
