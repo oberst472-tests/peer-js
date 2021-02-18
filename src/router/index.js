@@ -4,14 +4,22 @@ import VueRouter from 'vue-router'
 
 Vue.use(VueRouter)
 
-export default new VueRouter({
+const router = new VueRouter({
     mode: 'history',
     // base: process.env.BASE_URL
     routes: [
         {
-            component: require('@/pages/home/index').default,
+            component: require('@/pages/login/index').default,
             path: '/',
+            name: 'login'
+        },
+        {
+            component: require('@/pages/home/index').default,
+            path: '/dashboard',
             name: 'home'
         }
     ]
 })
+
+
+export default router

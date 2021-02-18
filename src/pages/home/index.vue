@@ -9,7 +9,7 @@
                     <UiBtn
                         class="page-terminal__btn"
                         @click="callRequest"
-                        v-if="false"
+                        v-if="!isCallBtnDisabled"
                         key="btn-1"
                     >
                         Позвонить
@@ -26,8 +26,8 @@
                 </transition>
             </div>
         </component>
-        <div class="page-terminal__popup" @click="callRequest" v-if="isPopupActive">
-        </div>
+        <!--        <div class="page-terminal__popup" @click="callRequest" v-if="isPopupActive">-->
+        <!--        </div>-->
     </div>
 </template>
 
@@ -69,9 +69,11 @@ export default {
     },
     methods: {
         socketConnect() {
-            const callCenterId = 'Q2FsbENlbnRlcjox'
+            const deviceInfo = JSON.parse(sessionStorage.getItem('tablet_info'))
+            const callCenterId = deviceInfo.user.call_center
             const type = 'device'
-            const url = `wss://vc-dev.enlighted.ru/ws/call-center-channel/${callCenterId}/?type=${type}`
+            const token = deviceInfo.token
+            const url = `wss://vc-dev.enlighted.ru/ws/call-center-channel/${callCenterId}/?type=${type}&token=${token}`
 
             this.socket = new WebSocket(url)
 
@@ -215,7 +217,6 @@ export default {
                 if (e) {
                     this.$refs.ptVid.srcObject = e.streams[0]
                     customLog('ontrack', 'Монтирование видео партнера', 'lightgreen')
-                    console.log(this.$refs.ptVid.srcObject)
                 } else {
                     customLog('ontrack', 'Видео партнера не смонтировано', 'lightgreen')
                 }
@@ -251,7 +252,7 @@ export default {
         },
 
         callRequest() {
-            this.isPopupActive = false
+            // this.isPopupActive = false
             if (this.isSocketOpen) {
                 const data = {
                     event: 'call_request'
@@ -319,6 +320,12 @@ export default {
     async mounted() {
         this.socketConnect()
         this.userStream = await navigator.mediaDevices.getUserMedia(this.options)
+    },
+    created() {
+        const urlPath = sessionStorage.getItem('tablet_info')
+        if (!urlPath) {
+            this.$router.push({name: 'login'})
+        }
     },
     beforeDestroy() {
         this.socketDisconnect()
