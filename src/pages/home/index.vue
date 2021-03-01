@@ -38,6 +38,7 @@ import {customLog} from '@/utils/console-group'
 export default {
     data() {
         return {
+            isOperatorAnsweredTheCall: false,
             isPopupActive: true,
             componentKey: 1,
             isCallBtnDisabled: false,
@@ -133,25 +134,38 @@ export default {
 
 
             const isOperatorAnsweredTheCall = eventName === 'operator_answered_the_call' //оператор ответил на звонок
+            const isCallRegistered = eventName === 'call_registered' //оператор еще не ответил на звонок но сам звонок зарегистрирован и ему присвоен id
             const isEndCallByEvent = eventName === 'end_call_by' //оператор завершил звонок
             const isMessageEvent = eventName === 'message' // пришло сообщение от терминала
 
-
-            if (isOperatorAnsweredTheCall) {
-                this.clientChannel = info['operator_channel']
+            if (isCallRegistered) {
                 this.callID = info['call_id']
 
+                customLog('isCallRegistered', 'Id звонка зарегистрирован')
+
+                // await this.sendRequestToOpenWebRTC()
+            }
+
+
+            if (isOperatorAnsweredTheCall) {
+                console.log(8)
+                this.clientChannel = info['operator_channel']
+                console.log(info.call_id)
+                // this.callID = info['call_id']
+                this.isOperatorAnsweredTheCall = true
                 customLog('isOperatorAnsweredTheCall', 'Оператор ответил на звонок Т')
 
                 await this.sendRequestToOpenWebRTC()
             }
 
             if (isEndCallByEvent) {
+                console.log(7)
                 customLog('isEndCallByEvent', 'Оператор завершил звонок Т')
                 this.reset()
             }
 
             if (isMessageEvent) {
+                console.log(6)
                 this.clientChannel = info.from
                 const messageData = info.message_data
                 const data = messageData.data
@@ -296,20 +310,24 @@ export default {
 
         },
         reset() {
-            this.peer.close()
-            this.peer.onicecandidate = null
-            this.peer.ontrack = null
+            if (this.isOperatorAnsweredTheCall) {
+                console.log(67)
+                this.peer.close()
+                this.peer.onicecandidate = null
+                this.peer.ontrack = null
+                this.peer = null
+                this.$refs.usVid.srcObject = null
+                this.$refs.ptVid.srcObject = null
+            }
             // this.userStream.stop()
             this.isCallBtnDisabled = false
-            this.peer = null
-            this.$refs.usVid.srcObject = null
-            this.$refs.ptVid.srcObject = null
 
             // this.userStream = null
 
             this.clientChannel = ''
             this.callID = ''
             this.componentKey++
+            this.isOperatorAnsweredTheCall = false
             // setTimeout(() => {
             //     this.userStream = navigator.mediaDevices.getUserMedia(this.options)
             //   }, 500);
@@ -320,6 +338,19 @@ export default {
     async mounted() {
         this.socketConnect()
         this.userStream = await navigator.mediaDevices.getUserMedia(this.options)
+        // eslint-disable-next-line no-unused-vars
+        function nbYear(p0, percent, aug, p) {
+            let num = p0
+            let years = 0
+            console.log((p0 * (percent / 100)) + aug)
+            for (let i = p; i > 0; i--) {
+                num = num + (num * (percent / 100)) + aug
+                years+=1
+                if (num > p) return years
+            }
+        }
+
+        console.log(nbYear(1500000, 2.5, 10000, 2000000))
     },
     created() {
         const urlPath = sessionStorage.getItem('tablet_info')
