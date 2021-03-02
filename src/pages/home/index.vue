@@ -57,14 +57,15 @@ export default {
                 offerToReceiveVideo: true
             },
             constraints: {
-                iceServers: [
-                    {urls: 'stun:vc-dev.enlighted.ru:3478'},
-                    {
-                        urls: 'turn:vc-dev.enlighted.ru:3478',
-                        username: 'tab1',
-                        credential: '123456',
-                    },
-                ],
+                // iceServers: [
+                //     {urls: 'stun:vc-dev.enlighted.ru:3478'},
+                //     {
+                //         urls: 'turn:vc-dev.enlighted.ru:3478',
+                //         username: 'tab1',
+                //         credential: '123456',
+                //     },
+                // ],
+                iceServers: [],
             },
         }
     },
@@ -140,7 +141,19 @@ export default {
 
             if (isCallRegistered) {
                 this.callID = info['call_id']
-
+                    this.constraints.iceServers = info.ice.map(item => {
+                        const arr = {
+                            urls: item.server,
+                        }
+                        if (item?.credentials?.password) {
+                            arr.credential = item.credentials.password
+                        }
+                        if (item?.credentials?.user) {
+                            arr.username = item.credentials.user
+                        }
+                        return arr
+                    })
+                console.log(this.constraints)
                 customLog('isCallRegistered', 'Id звонка зарегистрирован')
 
                 // await this.sendRequestToOpenWebRTC()
@@ -148,7 +161,6 @@ export default {
 
 
             if (isOperatorAnsweredTheCall) {
-                console.log(8)
                 this.clientChannel = info['operator_channel']
                 console.log(info.call_id)
                 // this.callID = info['call_id']
@@ -159,7 +171,6 @@ export default {
             }
 
             if (isEndCallByEvent) {
-                console.log(7)
                 customLog('isEndCallByEvent', 'Оператор завершил звонок Т')
                 this.reset()
             }
@@ -338,19 +349,7 @@ export default {
     async mounted() {
         this.socketConnect()
         this.userStream = await navigator.mediaDevices.getUserMedia(this.options)
-        // eslint-disable-next-line no-unused-vars
-        function nbYear(p0, percent, aug, p) {
-            let num = p0
-            let years = 0
-            console.log((p0 * (percent / 100)) + aug)
-            for (let i = p; i > 0; i--) {
-                num = num + (num * (percent / 100)) + aug
-                years+=1
-                if (num > p) return years
-            }
-        }
 
-        console.log(nbYear(1500000, 2.5, 10000, 2000000))
     },
     created() {
         const urlPath = sessionStorage.getItem('tablet_info')
