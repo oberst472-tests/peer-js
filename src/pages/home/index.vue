@@ -25,6 +25,13 @@
                     </UiBtn>
                 </transition>
             </div>
+            <div class="page-terminal__radio">
+                <input type="radio" id="one" value="ru" v-model="lang">
+                <label for="one">Русский</label>
+                <br>
+                <input type="radio" id="two" value="en" v-model="lang">
+                <label for="two">Английский</label>
+            </div>
         </component>
         <!--        <div class="page-terminal__popup" @click="callRequest" v-if="isPopupActive">-->
         <!--        </div>-->
@@ -38,6 +45,7 @@ import {customLog} from '@/utils/console-group'
 export default {
     data() {
         return {
+            lang: 'ru',
             isOperatorAnsweredTheCall: false,
             isPopupActive: true,
             componentKey: 1,
@@ -75,7 +83,7 @@ export default {
             const callCenterId = deviceInfo.user.call_center
             const type = 'device'
             const token = deviceInfo.token
-            const url = `wss://vc-dev.enlighted.ru/ws/call-center-channel/${callCenterId}/?type=${type}&token=${token}`
+            const url = `wss://vc-dev.enlighted.ru/ws/call-center-channel/${callCenterId}/?type=${type}&token=${token}&lang=${this.lang}`
 
             this.socket = new WebSocket(url)
 
@@ -278,15 +286,18 @@ export default {
 
         callRequest() {
             // this.isPopupActive = false
-            if (this.isSocketOpen) {
-                const data = {
-                    event: 'call_request'
+            this.socketConnect()
+            setTimeout(() => {
+                if (this.isSocketOpen) {
+                    const data = {
+                        event: 'call_request'
+                    }
+                    this.isCallBtnDisabled = true
+                    this.sendMessage('call_request', data)
+                } else {
+                    alert('Произошел системный сбой, перезагрузите страницу!')
                 }
-                this.isCallBtnDisabled = true
-                this.sendMessage('call_request', data)
-            } else {
-                alert('Произошел системный сбой, перезагрузите страницу!')
-            }
+              }, 1000);
         },
 
         stopCall() {
@@ -296,6 +307,7 @@ export default {
             }
             this.sendMessage('end_call', data)
             this.reset()
+            window.location.reload()
         },
 
         async _createOffer() {
@@ -344,14 +356,24 @@ export default {
             //   }, 500);
         }
     },
+    watch: {
+        lang(val) {
+            console.log(val)
+            sessionStorage.setItem('lang', val)
+            // window.location.reload()
+        }
+    },
 
 
     async mounted() {
-        this.socketConnect()
+        // this.socketConnect()
         this.userStream = await navigator.mediaDevices.getUserMedia(this.options)
 
     },
     created() {
+        if (sessionStorage.getItem('lang')) {
+            this.lang = sessionStorage.getItem('lang')
+        }
         const urlPath = sessionStorage.getItem('tablet_info')
         if (!urlPath) {
             this.$router.push({name: 'login'})
@@ -451,6 +473,18 @@ export default {
         .header {
             height: 67px;
             background-color: #0B677B;
+        }
+    }
+    &__radio {
+        position: fixed;
+        left: 290px;
+        bottom: 120px;
+        input {
+            margin: 0 3px 0 10px;
+            cursor: pointer;
+        }
+        label {
+            cursor: pointer;
         }
     }
 }
